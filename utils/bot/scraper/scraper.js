@@ -5,7 +5,7 @@ const {scrapeNoFluffJobs} = require("./utils/nofluffjobs");
 const {scrapeTheProtocol} = require("./utils/theprotocol");
 const {scrapeJustJoin} = require("./utils/justjoin");
 const {getAccountSettings} = require("./utils/utils");
-
+const {logBotAction} = require('../../services/statsService');
 
 async function scrapeJobOffers(accountId) {
     // Get account settings including LinkedIn cookie and custom links
@@ -14,10 +14,10 @@ async function scrapeJobOffers(accountId) {
         accountSettings = await getAccountSettings(accountId);
     } catch (error) {
         console.error(`Error retrieving account settings: ${error.message}`);
-        accountSettings = {}; // Use default settings if we can't get account settings
+        accountSettings = {};
     }
 
-    const browser = await puppeteer.launch({ headless: false, defaultViewport: { width: 920, height: 680 } });
+    const browser = await puppeteer.launch({ headless: true, defaultViewport: { width: 920, height: 680 } });
     const page = await browser.newPage();
 
     // Set LinkedIn cookie if available
@@ -42,35 +42,34 @@ async function scrapeJobOffers(accountId) {
     try {
         allJobDetails.push(...await scrapeJustJoin(page, accountSettings.justJoin_links));
     } catch (error) {
-        console.error('Error scraping JustJoin.it:', error.message);
+        await logBotAction(accountId, 'Scraping_Error', 'Error scraping JustJoin.it:' + error.message)
     }
 
     try {
         allJobDetails.push(...await scrapeTheProtocol(page, accountSettings.theProtocol_links));
     } catch (error) {
-        console.error('Error scraping TheProtocol.it:', error.message);
+        await logBotAction(accountId, 'Scraping_Error', 'Error scraping TheProtocol.it:' + error.message)
     }
 
     try {
         allJobDetails.push(...await scrapeNoFluffJobs(page, accountSettings.noFluffJobs_links));
     } catch (error) {
-        console.error('Error scraping NoFluffJobs:', error.message);
+        await logBotAction(accountId, 'Scraping_Error', 'Error scraping NoFluffJobs:' + error.message)
     }
 
     try {
         allJobDetails.push(...await scrapeLinkedInJobs(page, accountSettings.linkedIn_links, accountSettings.linkedIn_li_at_cookie));
     } catch (error) {
-        console.error('Error scraping LinkedIn Jobs:', error.message);
+        await logBotAction(accountId, 'Scraping_Error', 'Error scraping LinkedIn:' + error.message)
     }
 
     try {
         allJobDetails.push(...await scrapeTalentCom(page, accountSettings.talent_links));
     } catch (error) {
-        console.error('Error scraping Talent.com:', error.message);
+        await logBotAction(accountId, 'Scraping_Error', 'Error scraping Talent.com:' + error.message)
     }
 
     await browser.close();
-    console.log('Zamknięto przeglądarkę');
     return allJobDetails;
 }
 

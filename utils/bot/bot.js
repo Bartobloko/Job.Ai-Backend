@@ -13,8 +13,7 @@ const getJobDetails = async (accountId) => {
         );
         await statsService.updateAccountStats(accountId, { botActivations: 1 });
 
-        console.log('Pobieranie szczegółów ofert pracy...');
-        const scrappedJobs = await scraper.scrapeJobOffers(accountId); // Pass accountId to use custom settings
+        const scrappedJobs = await scraper.scrapeJobOffers(accountId);
 
         await statsService.logBotAction(
             accountId,
@@ -22,15 +21,19 @@ const getJobDetails = async (accountId) => {
             `Successfully scraped ${scrappedJobs.length} jobs`
         );
 
-        console.log('Znaleziono ofert:', scrappedJobs.length);
         let newJobsCount = 0;
         let analyzedJobsCount = 0;
-
+        let jobCount = 0
         for (const job of scrappedJobs) {
             const alreadySaved = await jobService.isJobAlreadySaved(job.title, job.company);
+            jobCount++;
 
             if (alreadySaved) {
-                console.log('Oferta już istnieje w bazie danych');
+                await statsService.logBotAction(
+                    accountId,
+                    'JOB_DUPLICATE',
+                    `Job ${jobCount}/${scrappedJobs.length} already existed in database`
+                );
             } else {
                 newJobsCount++;
                 const savedJob = await jobService.saveJobToDatabase(job, accountId);
@@ -42,7 +45,7 @@ const getJobDetails = async (accountId) => {
                     await statsService.logBotAction(
                         accountId,
                         'JOB_ANALYZED',
-                        `Analyzed job: ${job.title} - ${response.slice(0, 50)}...`
+                        `Analyzed job ${jobCount}/${scrappedJobs.length} : ${job.title} - ${response.slice(0, 50)}...`
                     );
                 } catch (error) {
                     await statsService.logBotAction(

@@ -61,10 +61,12 @@ router.get('/today', (req, res) => {
     const userId = req.user.id;
 
     const sql = `
-        SELECT j.*, COALESCE(gr.is_approved, 0) AS is_approved 
+        SELECT j.*, COALESCE(gr.is_approved, 0) AS is_approved, gr.response 
         FROM jobs j
-        LEFT JOIN gpt_responses gr ON j.id = gr.job_id AND gr.account_id = ?
-        WHERE j.account_id = ? AND DATE(j.created_at) = CURDATE()
+        LEFT JOIN gpt_responses gr 
+            ON j.id = gr.job_id AND gr.account_id = ?
+        WHERE j.account_id = ? 
+        AND DATE(j.created_at) = CURDATE()
     `;
 
     connection.query(sql, [userId, userId], (err, results) => {

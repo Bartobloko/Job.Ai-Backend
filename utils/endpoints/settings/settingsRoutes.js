@@ -36,4 +36,17 @@ router.get('/', decodeJWT, (req, res) => {
     });
 })
 
+router.put('/', decodeJWT, (req, res) => {
+    const { id } = req.user;
+    const { experience_level, custom_prompt, blocked_keywords, first_name, last_name, about_me, cv_path, linkedIn_li_at_cookie, ai_model } = req.body;
+    const sql = "UPDATE account_settings SET experience_level = ?, custom_prompt = ?, blocked_keywords = ?, first_name = ?, last_name = ?, about_me = ?, cv_path = ?, linkedIn_li_at_cookie = ?, ai_model = ? WHERE account_id = ?";
+    connection.query(sql, [experience_level, custom_prompt, blocked_keywords, first_name, last_name, about_me, cv_path, linkedIn_li_at_cookie, ai_model, id], (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.status(200).json({ message: "Settings updated successfully" });
+    });
+})
+
+
 module.exports = router;
